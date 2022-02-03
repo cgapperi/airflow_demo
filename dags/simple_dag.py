@@ -1,11 +1,15 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
 
 params = {
     "schedule_interval":"@once",
     "catchup":False
 }
+
+def hello_world(**kwargs):
+    print("Hello World!")
 
 with DAG(
         dag_id="simple_dag",
@@ -15,8 +19,9 @@ with DAG(
         task_id="start"
     )
 
-    task1 = DummyOperator(
-        task_id="task1"
+    helloWorld = PythonOperator(
+        task_id="hello_world",
+        python_callable=hello_world,
     )
 
     task2 = DummyOperator(
@@ -31,6 +36,6 @@ with DAG(
         task_id="end"
     )
 
-    start >> task1 >> end
+    start >> helloWorld >> end
     start >> task2 >> task3 >> end
 
