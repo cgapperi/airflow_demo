@@ -8,7 +8,7 @@ params = {
 }
 
 with DAG(
-        dag_id="simple_dag",
+        dag_id="dummy_dag",
         start_date=datetime(2022, 2, 1),
         params=params) as dag:
     start = DummyOperator(

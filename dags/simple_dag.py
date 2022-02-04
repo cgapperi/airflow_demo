@@ -25,10 +25,9 @@ def mult_ints(int1, int2):
 def div_ints(int1, int2):
     return int1/int2
 
-def perform_math(operator, int1, int2):
-    ops = {}
 def do_math(**kwargs):
     ti = kwargs['ti']
+    print(ti)
     operator = kwargs['operator']
 
     start = kwargs['start_int']
@@ -41,23 +40,48 @@ def do_math(**kwargs):
     print(operator)
 
     if operator == "add":
+        ti.xcom_push(key='add_int1', value=int1)
+        ti.xcom_push(key='add_int2', value=int2)
         result = add_ints(int1, int2)
     elif operator == "sub":
+        ti.xcom_push(key='sub_int1', value=int1)
+        ti.xcom_push(key='sub_int2', value=int2)
         result = sub_ints(int1, int2)
     elif operator ==  "mul":
+        print(f"rand_int1: {int1}")
+        print(f"rand_int2: {int2}")
+
+        int1 = ti.xcom_pull(key='add_int1', task_ids='add')
+        int2 = ti.xcom_pull(key='add_int2', task_ids='add')
+
+        print(f"add_int1: {int1}")
+        print(f"add_int2: {int2}")
         result = mult_ints(int1, int2)
     elif operator == "div":
+        print(f"rand_int1: {int1}")
+        print(f"rand_int2: {int2}")
+
+        int1 = ti.xcom_pull(key='sub_int1', task_ids='sub')
+        int2 = ti.xcom_pull(key='sub_int2', task_ids='sub')
+
+        print(f"add_int1: {int1}")
+        print(f"add_int2: {int2}")
         result = div_ints(int1, int2)
     else:
         result = "BAD OPERATOR"
     return operator, int1, int2, result
 
 with DAG(
-        dag_id="simple_dag",
+        dag_id="more_complex",
         start_date=datetime(2022, 2, 1),
         params=params) as dag:
+
     start = DummyOperator(
         task_id="start"
+    )
+
+    simple_path = DummyOperator(
+        task_id="simple_path"
     )
 
     helloWorld = PythonOperator(
@@ -123,12 +147,26 @@ with DAG(
                }
     )
 
+    simple_path_exit = DummyOperator(
+        task_id = "simple_path_exit"
+    )
+
+    simple_ops_exit = DummyOperator(
+        task_id = "simple_ops_exit"
+    )
+
+    complex_ops_exit = DummyOperator(
+        task_id = "complex_ops_exit"
+    )
+
     end = DummyOperator(
     task_id="end"
     )
 
-    start >> helloWorld >> end
-    start >> date >> end
-    start >> simple_ops >> [ add, sub] >> end
-    start >> complex_ops >> [ mult, div, bad_op] >> end
+    start >> simple_path >> [ helloWorld, date] >> simple_path_exit
+    start >> simple_ops >> [ add, sub] >> simple_ops_exit
+    start >> complex_ops >> [ mult, div, bad_op] >> complex_ops_exit
+    add >> mult
+    sub >> div
+    [simple_path_exit, simple_ops_exit, complex_ops_exit] >> end
 

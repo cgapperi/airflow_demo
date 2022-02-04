@@ -12,7 +12,7 @@ def hello_world(**kwargs):
     print("Hello World!")
 
 with DAG(
-        dag_id="simple_dag",
+        dag_id="simple_operators",
         start_date=datetime(2022, 2, 1),
         params=params) as dag:
     start = DummyOperator(
